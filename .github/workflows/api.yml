@@ -34,3 +34,4 @@ jobs:
         git add data/airtable.json
         git commit -m "Update Airtable data" || echo "No hay cambios"
         git push || echo "Push falló"
+
