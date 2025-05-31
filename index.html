@@ -26,11 +26,6 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // ⚠️ Reemplaza esto con tu token SOLO para pruebas locales
-    const airtableToken = "patiRwUAYSPhDFA6v.4860e76fce11ae963cf71189508da6ff87c3c2a8b82782b802eb20e1f04a2296";
-    const baseId = "appo1MtSst3hKF0ky";
-    const tableName = "Vistas";
-
     const map = L.map('map').setView([39.5696, 2.6502], 13); // Centro Palma
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -38,59 +33,26 @@
     }).addTo(map);
 
     async function cargarPuntos() {
-      const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
-      const headers = {
-        Authorization: `Bearer ${airtableToken}`,
-      };
+      const res = await fetch('./data/airtable.json'); // Ruta relativa al JSON
+      const data = await res.json();
 
-      try {
-        const res = await fetch(url, { headers });
-        const data = await res.json();
+      data.records.forEach(record => {
+        const nombre = record.fields.Nombre;
+        const lat = record.fields.Latitud;
+        const lng = record.fields.Longitud;
+        const check = record.fields.CheckIn;
 
-        data.records.forEach(record => {
-          const nombre = record.fields.Nombre;
-          const lat = record.fields.Latitud;
-          const lng = record.fields.Longitud;
-          const check = record.fields.CheckIn;
+        if (lat && lng) {
+          const icon = L.circleMarker([lat, lng], {
+            radius: 10,
+            color: check ? 'green' : 'gray',
+            fillOpacity: check ? 1 : 0,
+            weight: 2
+          });
 
-          if (lat && lng) {
-            const icon = L.circleMarker([lat, lng], {
-              radius: 10,
-              color: check ? 'green' : 'gray',
-              fillOpacity: check ? 1 : 0,
-              weight: 2
-            });
-
-            icon.addTo(map).bindPopup(nombre);
-
-            icon.on('click', async () => {
-              const nuevoCheck = !check;
-              icon.setStyle({
-                fillOpacity: nuevoCheck ? 1 : 0,
-                color: nuevoCheck ? 'green' : 'gray'
-              });
-
-              icon.bindPopup(`${nombre}<br><b>Check-in ${nuevoCheck ? 'realizado' : 'cancelado'}</b>`).openPopup();
-
-              // Actualizar en Airtable
-              await fetch(`${url}/${record.id}`, {
-                method: 'PATCH',
-                headers: {
-                  'Authorization': `Bearer ${airtableToken}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  fields: {
-                    CheckIn: nuevoCheck
-                  }
-                })
-              });
-            });
-          }
-        });
-      } catch (error) {
-        console.error("Error al cargar desde Airtable:", error);
-      }
+          icon.addTo(map).bindPopup(nombre);
+        }
+      });
     }
 
     cargarPuntos();
