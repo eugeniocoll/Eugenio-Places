@@ -51,14 +51,16 @@
           const direccion = record.fields.Direccion || 'Sin dirección';
           const lat = record.fields.Latitud;
           const lng = record.fields.Longitud;
-          let check = record.fields.CheckIn || false; // Usamos let para que se pueda actualizar
+          let check = record.fields.CheckIn || false;
 
           if (lat && lng) {
             const icon = L.circleMarker([lat, lng], {
-              radius: 10,
+              radius: 12,
               color: check ? 'green' : 'gray',
-              fillOpacity: check ? 1 : 0,
-              weight: 2
+              fillColor: check ? 'green' : '#888',
+              fillOpacity: check ? 0.7 : 0.3,
+              weight: 3,
+              opacity: 1
             });
 
             const actualizarPopup = () => {
@@ -69,15 +71,15 @@
             icon.addTo(map);
 
             icon.on('click', async () => {
-              check = !check; // Cambiamos el valor local de check
+              check = !check;
               icon.setStyle({
-                fillOpacity: check ? 1 : 0,
+                fillColor: check ? 'green' : '#888',
+                fillOpacity: check ? 0.7 : 0.3,
                 color: check ? 'green' : 'gray'
               });
               actualizarPopup();
               icon.openPopup();
 
-              // Actualizar en Airtable
               await fetch(`${url}/${record.id}`, {
                 method: 'PATCH',
                 headers: {
@@ -101,6 +103,8 @@
     cargarPuntos();
   </script>
 </body>
+</html>
+
 </html>
 
 
