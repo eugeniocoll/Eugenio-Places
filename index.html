@@ -34,33 +34,66 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <script>
-    const coords = [39.5685, 2.6476];
-    const map = L.map('map').setView(coords, 17);
+    const map = L.map('map').setView([39.5685, 2.6476], 14);
 
     // Cargar tiles de OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Crear marcador como bolita vacía (borde gris, relleno blanco)
-    let marker = L.circleMarker(coords, {
-      radius: 10,
-      fillColor: "white",
-      color: "gray",
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.5
-    }).addTo(map).bindPopup('Haz click para hacer check-in');
+    // Definimos los sitios con sus coordenadas y textos
+    const sitios = [
+      {
+        name: "Kaelum Club",
+        coords: [39.5685, 2.6476],
+        address: "Avinguda de l'Argentina, 3, Palma"
+      },
+      {
+        name: "Bar Molly Malone",
+        coords: [39.5678, 2.6410], // Coordenadas aproximadas para el Bar Molly Malone
+        address: "Carrer de Monsenyor Palmer, 5, Palma"
+      }
+    ];
 
-    // Evento click para cambiar a bolita verde y mostrar mensaje
-    marker.on('click', function () {
-      marker.setStyle({
-        fillColor: "green",
-        color: "#060",
-        fillOpacity: 0.9
+    // Función para crear un marcador interactivo con check-in toggle
+    function crearMarcador(sitio) {
+      const marker = L.circleMarker(sitio.coords, {
+        radius: 10,
+        color: "gray",
+        weight: 2,
+        fillOpacity: 0,
+        fillColor: "white",
+        className: "circle-marker"
+      }).addTo(map);
+
+      marker.bindPopup(`<b>${sitio.name}</b><br>${sitio.address}<br><i>Haz click para hacer check-in</i>`);
+
+      let checkedIn = false;
+
+      marker.on('click', () => {
+        checkedIn = !checkedIn;
+
+        if (checkedIn) {
+          marker.setStyle({
+            fillColor: "green",
+            fillOpacity: 0.9,
+            color: "#060"
+          });
+          marker.bindPopup(`<b>${sitio.name}</b><br>${sitio.address}<br><b>Check-In realizado ✅</b>`).openPopup();
+        } else {
+          marker.setStyle({
+            fillOpacity: 0,
+            color: "gray"
+          });
+          marker.bindPopup(`<b>${sitio.name}</b><br>${sitio.address}<br><i>Haz click para hacer check-in</i>`).openPopup();
+        }
       });
-      marker.bindPopup('<b>Check-In realizado ✅</b>').openPopup();
-    });
+
+      return marker;
+    }
+
+    // Añadir todos los marcadores
+    sitios.forEach(sitio => crearMarcador(sitio));
   </script>
 </body>
 </html>
