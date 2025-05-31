@@ -18,7 +18,7 @@ jobs:
         run: |
           mkdir -p data
           curl -s -H "Authorization: Bearer ${{ secrets.AIRTABLE_TOKEN }}" \
-               "https://api.airtable.com/v0/appo1MtSst3hKF0ky/Vistas" \
+               "https://api.airtable.com/v0/appo1MtSst3hKF0ky/Puntos" \
                > data/airtable.json  # Aquí se hace la consulta a Airtable y se guarda el archivo JSON
 
       - name: Commit and Push
