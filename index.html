@@ -28,7 +28,7 @@
   <script>
     const airtableToken = "patiRwUAYSPhDFA6v.4860e76fce11ae963cf71189508da6ff87c3c2a8b82782b802eb20e1f04a2296";
     const baseId = "appo1MtSst3hKF0ky";
-    const tableName = "Puntos"; // Asegúrate de que el nombre de la tabla es correcto
+    const tableName = "Puntos"; // Nombre de la tabla
 
     const map = L.map('map').setView([39.5696, 2.6502], 13); // Centro Palma
 
@@ -47,12 +47,12 @@
         const data = await res.json();
 
         data.records.forEach(record => {
-          const nombre = record.fields.Nombre;
+          const nombre = record.fields.Nombre || 'Sin nombre';
+          const direccion = record.fields.Direccion || 'Sin dirección';
           const lat = record.fields.Latitud;
           const lng = record.fields.Longitud;
-          const check = record.fields.CheckIn;
+          let check = record.fields.CheckIn || false; // Usamos let para que se pueda actualizar
 
-          // Verificamos que las coordenadas existan
           if (lat && lng) {
             const icon = L.circleMarker([lat, lng], {
               radius: 10,
@@ -61,17 +61,21 @@
               weight: 2
             });
 
-            icon.addTo(map).bindPopup(`<b>${nombre}</b>`); // Mostramos el nombre al hacer clic
+            const actualizarPopup = () => {
+              icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: ${check ? 'Sí' : 'No'}</b>`);
+            };
+
+            actualizarPopup();
+            icon.addTo(map);
 
             icon.on('click', async () => {
-              const nuevoCheck = !check;
+              check = !check; // Cambiamos el valor local de check
               icon.setStyle({
-                fillOpacity: nuevoCheck ? 1 : 0,
-                color: nuevoCheck ? 'green' : 'gray'
+                fillOpacity: check ? 1 : 0,
+                color: check ? 'green' : 'gray'
               });
-
-              // Actualizamos el popup al hacer clic
-              icon.bindPopup(`<b>${nombre}</b><br><b>Check-in ${nuevoCheck ? 'realizado' : 'cancelado'}</b>`).openPopup();
+              actualizarPopup();
+              icon.openPopup();
 
               // Actualizar en Airtable
               await fetch(`${url}/${record.id}`, {
@@ -82,7 +86,7 @@
                 },
                 body: JSON.stringify({
                   fields: {
-                    CheckIn: nuevoCheck
+                    CheckIn: check
                   }
                 })
               });
@@ -98,5 +102,6 @@
   </script>
 </body>
 </html>
+
 
 
