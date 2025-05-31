@@ -26,6 +26,10 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
+    const airtableToken = "patiRwUAYSPhDFA6v.4860e76fce11ae963cf71189508da6ff87c3c2a8b82782b802eb20e1f04a2296";
+    const baseId = "appo1MtSst3hKF0ky";
+    const tableName = "Puntos"; // Asegúrate de que el nombre de la tabla es correcto
+
     const map = L.map('map').setView([39.5696, 2.6502], 13); // Centro Palma
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -33,11 +37,14 @@
     }).addTo(map);
 
     async function cargarPuntos() {
-      try {
-        const res = await fetch('data/airtable.json');
-        const data = await res.json();
+      const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+      const headers = {
+        Authorization: `Bearer ${airtableToken}`,
+      };
 
-        console.log(data); // Para depuración
+      try {
+        const res = await fetch(url, { headers });
+        const data = await res.json();
 
         data.records.forEach(record => {
           const nombre = record.fields.Nombre;
@@ -45,6 +52,7 @@
           const lng = record.fields.Longitud;
           const check = record.fields.CheckIn;
 
+          // Verificamos que las coordenadas existan
           if (lat && lng) {
             const icon = L.circleMarker([lat, lng], {
               radius: 10,
@@ -53,11 +61,36 @@
               weight: 2
             });
 
-            icon.addTo(map).bindPopup(nombre);
+            icon.addTo(map).bindPopup(`<b>${nombre}</b>`); // Mostramos el nombre al hacer clic
+
+            icon.on('click', async () => {
+              const nuevoCheck = !check;
+              icon.setStyle({
+                fillOpacity: nuevoCheck ? 1 : 0,
+                color: nuevoCheck ? 'green' : 'gray'
+              });
+
+              // Actualizamos el popup al hacer clic
+              icon.bindPopup(`<b>${nombre}</b><br><b>Check-in ${nuevoCheck ? 'realizado' : 'cancelado'}</b>`).openPopup();
+
+              // Actualizar en Airtable
+              await fetch(`${url}/${record.id}`, {
+                method: 'PATCH',
+                headers: {
+                  'Authorization': `Bearer ${airtableToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  fields: {
+                    CheckIn: nuevoCheck
+                  }
+                })
+              });
+            });
           }
         });
       } catch (error) {
-        console.error("Error al cargar datos:", error);
+        console.error("Error al cargar desde Airtable:", error);
       }
     }
 
@@ -65,4 +98,5 @@
   </script>
 </body>
 </html>
+
 
