@@ -4,25 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Viaje con Manuel</title>
-
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-
   <style>
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 0;
+      font-family: Arial, sans-serif;
     }
-
     h1 {
       text-align: center;
-      margin: 20px;
+      margin: 10px;
     }
-
     #map {
-      height: 500px;
       width: 100%;
+      height: 90vh;
     }
   </style>
 </head>
@@ -30,70 +24,76 @@
   <h1>Viaje con Manuel</h1>
   <div id="map"></div>
 
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
   <script>
-    const map = L.map('map').setView([39.5685, 2.6440], 15);
+    // ⚠️ Reemplaza esto con tu token SOLO para pruebas locales
+    const airtableToken = "patiRwUAYSPhDFA6v.4860e76fce11ae963cf71189508da6ff87c3c2a8b82782b802eb20e1f04a2296";
+    const baseId = "appo1MtSst3hKF0ky";
+    const tableName = "Vistas";
 
-    // Cargar tiles OpenStreetMap
+    const map = L.map('map').setView([39.5696, 2.6502], 13); // Centro Palma
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Sitios con coordenadas precisas para Palma de Mallorca
-    const sitios = [
-      {
-        name: "Kaelum Club",
-        coords: [39.5685, 2.6476],
-        address: "Avinguda de l'Argentina, 3, Palma"
-      },
-      {
-        name: "Bar Molly Malone",
-        coords: [39.5678, 2.6420], // ligeramente separado para evitar solapamiento
-        address: "Carrer de Monsenyor Palmer, 5, Palma"
+    async function cargarPuntos() {
+      const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+      const headers = {
+        Authorization: `Bearer ${airtableToken}`,
+      };
+
+      try {
+        const res = await fetch(url, { headers });
+        const data = await res.json();
+
+        data.records.forEach(record => {
+          const nombre = record.fields.Nombre;
+          const lat = record.fields.Latitud;
+          const lng = record.fields.Longitud;
+          const check = record.fields.CheckIn;
+
+          if (lat && lng) {
+            const icon = L.circleMarker([lat, lng], {
+              radius: 10,
+              color: check ? 'green' : 'gray',
+              fillOpacity: check ? 1 : 0,
+              weight: 2
+            });
+
+            icon.addTo(map).bindPopup(nombre);
+
+            icon.on('click', async () => {
+              const nuevoCheck = !check;
+              icon.setStyle({
+                fillOpacity: nuevoCheck ? 1 : 0,
+                color: nuevoCheck ? 'green' : 'gray'
+              });
+
+              icon.bindPopup(`${nombre}<br><b>Check-in ${nuevoCheck ? 'realizado' : 'cancelado'}</b>`).openPopup();
+
+              // Actualizar en Airtable
+              await fetch(`${url}/${record.id}`, {
+                method: 'PATCH',
+                headers: {
+                  'Authorization': `Bearer ${airtableToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  fields: {
+                    CheckIn: nuevoCheck
+                  }
+                })
+              });
+            });
+          }
+        });
+      } catch (error) {
+        console.error("Error al cargar desde Airtable:", error);
       }
-    ];
-
-    function crearMarcador(sitio) {
-      const marker = L.circleMarker(sitio.coords, {
-        radius: 12,
-        color: "gray",
-        weight: 3,
-        fillOpacity: 0,
-        fillColor: "white",
-        className: "circle-marker",
-        interactive: true,
-        bubblingMouseEvents: true
-      }).addTo(map);
-
-      marker.bindPopup(`<b>${sitio.name}</b><br>${sitio.address}<br><i>Haz click para hacer check-in</i>`);
-
-      let checkedIn = false;
-
-      marker.on('click', () => {
-        checkedIn = !checkedIn;
-
-        if (checkedIn) {
-          marker.setStyle({
-            fillColor: "green",
-            fillOpacity: 0.8,
-            color: "#006400"
-          });
-          marker.bindPopup(`<b>${sitio.name}</b><br>${sitio.address}<br><b>Check-In realizado en ${sitio.name} ✅</b>`).openPopup();
-        } else {
-          marker.setStyle({
-            fillOpacity: 0,
-            color: "gray"
-          });
-          marker.bindPopup(`<b>${sitio.name}</b><br>${sitio.address}<br><i>Haz click para hacer check-in</i>`).openPopup();
-        }
-      });
-
-      return marker;
     }
 
-    sitios.forEach(sitio => crearMarcador(sitio));
+    cargarPuntos();
   </script>
 </body>
 </html>
