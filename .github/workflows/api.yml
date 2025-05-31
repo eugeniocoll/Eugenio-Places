@@ -1,0 +1,26 @@
+name: Airtable API Proxy
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"  # Cada 10 minutos
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch Airtable Data
+        run: |
+          curl -s -H "Authorization: Bearer ${{ secrets.AIRTABLE_TOKEN }}" \
+               "https://api.airtable.com/v0/appo1MtSst3hKF0ky/Vistas" \
+               > data/airtable.json
+
+      - name: Commit and Push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/airtable.json
+          git commit -m "Update Airtable data"
+          git push
