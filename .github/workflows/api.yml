@@ -13,11 +13,13 @@ jobs:
     - name: Clonar el repositorio
       uses: actions/checkout@v3
 
+    - name: Crear carpeta data
+      run: mkdir -p data  # Asegura que la carpeta 'data' exista
+
     - name: Descargar datos de Airtable
       env:
         AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
       run: |
-        mkdir -p data
         curl -s -H "Authorization: Bearer $AIRTABLE_TOKEN" \
         "https://api.airtable.com/v0/appo1MtSst3hKF0ky/Puntos" \
         > data/airtable.json
