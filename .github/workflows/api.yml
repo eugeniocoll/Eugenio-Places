@@ -1,44 +1,31 @@
-name: Actualizar datos de Airtable
+name: Airtable API Proxy
 
 on:
-  schedule:
-    - cron: '0 * * * *'  # Cada hora
   workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"  # Cada 10 minutos
+
+permissions:
+  contents: write  # Asegúrate de que `GITHUB_TOKEN` tenga permiso de escritura
 
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Clonar el repositorio
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v3  # Este paso descarga el código del repositorio
 
-    - name: Crear carpeta data
-      run: mkdir -p data  # Asegura que la carpeta 'data' exista
+      - name: Fetch Airtable Data
+        run: |
+          mkdir -p data
+          curl -s -H "Authorization: Bearer ${{ secrets.AIRTABLE_TOKEN }}" \
+               "https://api.airtable.com/v0/appo1MtSst3hKF0ky/Vistas" \
+               > data/airtable.json  # Aquí se hace la consulta a Airtable y se guarda el archivo JSON
 
-    - name: Descargar datos de Airtable
-      env:
-        AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
-      run: |
-        curl -s -H "Authorization: Bearer $AIRTABLE_TOKEN" \
-        "https://api.airtable.com/v0/appo1MtSst3hKF0ky/Puntos" \
-        > data/airtable.json
-
-    - name: Configurar Git para usar el token
-      env:
-        GH_PAT: ${{ secrets.GH_PAT }}
-      run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
-        git remote show origin  # Verificar la URL remota configurada
-
-    - name: Hacer commit y push de los datos actualizados
-      env:
-        GH_PAT: ${{ secrets.GH_PAT }}
-      run: |
-        git add data/airtable.json
-        git commit -m "Update Airtable data" || echo "No hay cambios"
-        git push || echo "Push falló"
-
-
+      - name: Commit and Push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git remote set-url origin https://github.com/${{ github.repository }}  # Asegura la URL del repositorio
+          git add data/airtable.json
+          git commit -m "Update Airtable data" || echo "No changes to commit"  # Si no hay cambios, no se hace commit
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}  # Usamos el `GITHUB_TOKEN` para el push
