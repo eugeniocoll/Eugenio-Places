@@ -48,7 +48,7 @@
 
         data.records.forEach(record => {
           const nombre = record.fields.Nombre || 'Sin nombre';
-          const direccion = record.fields.Direccion || 'Sin dirección';
+          const direccion = record.fields["Dirección"] || 'Sin dirección';
           const lat = record.fields.Latitud;
           const lng = record.fields.Longitud;
           let check = record.fields.CheckIn || false;
@@ -104,8 +104,3 @@
   </script>
 </body>
 </html>
-
-</html>
-
-
-
