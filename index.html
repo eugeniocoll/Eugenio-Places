@@ -24,29 +24,11 @@
       height: 500px;
       width: 100%;
     }
-
-    #checkin-btn {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    #checkin-btn.checked {
-      background-color: #888;
-      cursor: default;
-    }
   </style>
 </head>
 <body>
   <h1>Viaje con Manuel</h1>
   <div id="map"></div>
-  <button id="checkin-btn">Check-In en Kaelum Club</button>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -55,41 +37,29 @@
     const coords = [39.5685, 2.6476];
     const map = L.map('map').setView(coords, 17);
 
-    // Cargar tiles
+    // Cargar tiles de OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Crear marcador (color rojo por defecto)
+    // Crear marcador como bolita vacía (borde gris, relleno blanco)
     let marker = L.circleMarker(coords, {
       radius: 10,
-      fillColor: "red",
-      color: "#900",
+      fillColor: "white",
+      color: "gray",
       weight: 2,
       opacity: 1,
-      fillOpacity: 0.8
-    }).addTo(map).bindPopup('<b>Kaelum Club</b><br>Avinguda de l\'Argentina 3');
+      fillOpacity: 0.5
+    }).addTo(map).bindPopup('Haz click para hacer check-in');
 
-    // Botón Check-In
-    const btn = document.getElementById("checkin-btn");
-    let checked = false;
-
-    btn.addEventListener("click", function () {
-      if (checked) return;
-
-      // Cambiar color del marcador
+    // Evento click para cambiar a bolita verde y mostrar mensaje
+    marker.on('click', function () {
       marker.setStyle({
         fillColor: "green",
-        color: "#060"
+        color: "#060",
+        fillOpacity: 0.9
       });
-
-      marker.bindPopup('<b>Check-In realizado en Kaelum Club ✅</b>').openPopup();
-
-      // Desactivar botón
-      btn.textContent = "Check-In completado";
-      btn.classList.add("checked");
-      btn.disabled = true;
-      checked = true;
+      marker.bindPopup('<b>Check-In realizado ✅</b>').openPopup();
     });
   </script>
 </body>
