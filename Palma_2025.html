@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Viaje con Manuel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-sA+SkCxH6FGjn11gMyiNsUcsdScQv8Tb4lm1/tu9o2E="
+    crossorigin=""
+  />
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    #map {
+      height: 500px;
+      min-height: 400px;
+      width: 100%;
+      max-width: 100%;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    #check-in-btn {
+      display: none;
+      padding: 10px 15px;
+      background-color: #4caf50;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #check-in-btn:hover {
+      background-color: #388e3c;
+    }
+  </style>
+</head>
+<body>
+  <h1>Viaje con Manuel</h1>
+  <div id="map"></div>
+  <button id="check-in-btn">Hacer Check-In en Kaelum Club</button>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1j8wtLhKtnij5F7gJzMmvjqE2CdZiME+xkYs3tmU="
+    crossorigin=""
+  ></script>
+  <script>
+    const kaelumCoords = [39.568338, 2.646757];
+
+    const map = L.map('map').setView(kaelumCoords, 18);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    const checkInBtn = document.getElementById('check-in-btn');
+    let checked = false;
+
+    const marker = L.circleMarker(kaelumCoords, {
+      radius: 12,
+      color: 'red',
+      fillColor: 'white',
+      fillOpacity: 1,
+    }).addTo(map);
+
+    marker.bindPopup('Kaelum Club<br>Haz clic para hacer Check-In');
+
+    marker.on('click', () => {
+      if (!checked) {
+        checkInBtn.style.display = 'inline-block';
+      }
+    });
+
+    checkInBtn.addEventListener('click', () => {
+      checked = true;
+      marker.setStyle({ fillColor: 'green', color: 'darkgreen' });
+      checkInBtn.style.display = 'none';
+      marker.bindPopup('Check-In completado ✅').openPopup();
+      alert('✅ Check-In realizado en Kaelum Club');
+    });
+  </script>
+</body>
+</html>
