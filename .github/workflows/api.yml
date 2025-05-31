@@ -19,9 +19,12 @@ jobs:
                > data/airtable.json
 
       - name: Commit and Push
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
           git add data/airtable.json
-          git commit -m "Update Airtable data"
+          git commit -m "Update Airtable data" || echo "No changes to commit"
           git push
