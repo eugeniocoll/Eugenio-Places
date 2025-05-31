@@ -1,31 +1,33 @@
-name: Airtable API Proxy
+name: Actualizar datos de Airtable
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: "*/10 * * * *"  # Cada 10 minutos
-
-permissions:
-  contents: write  # Asegúrate de que `GITHUB_TOKEN` tenga permiso de escritura
+    - cron: '0 * * * *'  # Cada hora
+  workflow_dispatch:
 
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3  # Este paso descarga el código del repositorio
+    - name: Clonar el repositorio
+      uses: actions/checkout@v3
 
-      - name: Fetch Airtable Data
-        run: |
-          mkdir -p data
-          curl -s -H "Authorization: Bearer ${{ secrets.AIRTABLE_TOKEN }}" \
-               "https://api.airtable.com/v0/appo1MtSst3hKF0ky/Vistas" \
-               > data/airtable.json  # Aquí se hace la consulta a Airtable y se guarda el archivo JSON
+    - name: Descargar datos de Airtable
+      env:
+        AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+      run: |
+        mkdir -p data
+        curl -s -H "Authorization: Bearer $AIRTABLE_TOKEN" \
+        "https://api.airtable.com/v0/appo1MtSst3hKF0ky/Puntos" \
+        > data/airtable.json
 
-      - name: Commit and Push
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git remote set-url origin https://github.com/${{ github.repository }}  # Asegura la URL del repositorio
-          git add data/airtable.json
-          git commit -m "Update Airtable data" || echo "No changes to commit"  # Si no hay cambios, no se hace commit
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}  # Usamos el `GITHUB_TOKEN` para el push
+    - name: Hacer commit y push de los datos actualizados
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add data/airtable.json
+        git commit -m "Update Airtable data"
+        git push
