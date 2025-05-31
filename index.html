@@ -33,26 +33,32 @@
     }).addTo(map);
 
     async function cargarPuntos() {
-      const res = await fetch('./data/airtable.json'); // Ruta relativa al JSON
-      const data = await res.json();
+      try {
+        const res = await fetch('data/airtable.json');
+        const data = await res.json();
 
-      data.records.forEach(record => {
-        const nombre = record.fields.Nombre;
-        const lat = record.fields.Latitud;
-        const lng = record.fields.Longitud;
-        const check = record.fields.CheckIn;
+        console.log(data); // Para depuración
 
-        if (lat && lng) {
-          const icon = L.circleMarker([lat, lng], {
-            radius: 10,
-            color: check ? 'green' : 'gray',
-            fillOpacity: check ? 1 : 0,
-            weight: 2
-          });
+        data.records.forEach(record => {
+          const nombre = record.fields.Nombre;
+          const lat = record.fields.Latitud;
+          const lng = record.fields.Longitud;
+          const check = record.fields.CheckIn;
 
-          icon.addTo(map).bindPopup(nombre);
-        }
-      });
+          if (lat && lng) {
+            const icon = L.circleMarker([lat, lng], {
+              radius: 10,
+              color: check ? 'green' : 'gray',
+              fillOpacity: check ? 1 : 0,
+              weight: 2
+            });
+
+            icon.addTo(map).bindPopup(nombre);
+          }
+        });
+      } catch (error) {
+        console.error("Error al cargar datos:", error);
+      }
     }
 
     cargarPuntos();
