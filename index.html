@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Viaje con Manuel - Caza San Martín</title>
+  <title>Viaje con Manuel</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <style>
     body {
@@ -28,7 +28,7 @@
   <script>
     const airtableToken = "patiRwUAYSPhDFA6v";  // Token de Airtable
     const baseId = "appo1MtSst3hKF0ky";  // Base ID de Airtable
-    const tableName = "Caza";  // Nombre de la tabla en Airtable
+    const tableName = "Puntos";  // Nombre de la tabla en Airtable
 
     const map = L.map('map').setView([39.5696, 2.6502], 13); // Centro Palma
 
@@ -71,6 +71,7 @@
             actualizarPopup();
             icon.addTo(map);
 
+            // Agregar funcionalidad de Check-in al hacer clic
             icon.on('click', async () => {
               check = !check;
               icon.setStyle({
@@ -81,7 +82,7 @@
               actualizarPopup();
               icon.openPopup();
 
-              // Actualizar el estado en Airtable
+              // Actualizar el estado de Check-in en Airtable
               await fetch(`${url}/${record.id}`, {
                 method: 'PATCH',
                 headers: {
@@ -123,7 +124,7 @@
 
         // Agregar el punto a Airtable
         const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
-        await fetch(url, {
+        const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${airtableToken}`,
@@ -135,9 +136,18 @@
               Direccion: direccion,
               Latitud: lat,
               Longitud: lng,
-              CheckIn: false
+              CheckIn: false  // Estado de Check-in por defecto
             }
           })
+        });
+
+        // Esperamos a que el nuevo punto sea añadido y actualizamos la interfaz
+        const data = await response.json();
+        const newPoint = data.fields;
+        icon.setStyle({
+          fillColor: newPoint.CheckIn ? 'green' : '#888',
+          fillOpacity: newPoint.CheckIn ? 0.7 : 0.3,
+          color: newPoint.CheckIn ? 'green' : 'gray'
         });
       }
     });
@@ -146,3 +156,4 @@
   </script>
 </body>
 </html>
+
