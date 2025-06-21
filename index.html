@@ -26,9 +26,9 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const airtableToken = "patiRwUAYSPhDFA6v";  // Token de Airtable
-    const baseId = "appo1MtSst3hKF0ky";  // Base ID de Airtable
-    const tableName = "Puntos";  // Nombre de la tabla en Airtable
+    const airtableToken = "patiRwUAYSPhDFA6v.4860e76fce11ae963cf71189508da6ff87c3c2a8b82782b802eb20e1f04a2296";
+    const baseId = "appo1MtSst3hKF0ky";
+    const tableName = "Puntos"; // Nombre de la tabla
 
     const map = L.map('map').setView([39.5696, 2.6502], 13); // Centro Palma
 
@@ -36,7 +36,7 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Cargar los puntos de la base de datos Airtable
+    // Función para cargar los puntos existentes de Airtable
     async function cargarPuntos() {
       const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
       const headers = {
@@ -71,7 +71,7 @@
             actualizarPopup();
             icon.addTo(map);
 
-            // Agregar funcionalidad de Check-in al hacer clic
+            // Funcionalidad de Check-in al hacer clic
             icon.on('click', async () => {
               check = !check;
               icon.setStyle({
@@ -103,7 +103,7 @@
       }
     }
 
-    // Agregar un nuevo punto al hacer clic en el mapa
+    // Función para agregar un nuevo punto al hacer clic en el mapa
     map.on('click', async function(e) {
       const lat = e.latlng.lat;
       const lng = e.latlng.lng;
@@ -122,7 +122,7 @@
 
         icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: No</b>`);
 
-        // Agregar el punto a Airtable
+        // Agregar el nuevo punto a Airtable
         const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
         const response = await fetch(url, {
           method: 'POST',
@@ -157,5 +157,6 @@
   </script>
 </body>
 </html>
+
 
 
