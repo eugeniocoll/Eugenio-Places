@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Viaje con Manuel</title>
+  <title>Viaje Manuel</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <style>
     body {
@@ -33,7 +33,7 @@
   </style>
 </head>
 <body>
-  <h1>Viaje con Manuel</h1>
+  <h1>Viaje Manuel</h1>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -79,11 +79,19 @@
             <button class="delete-btn" onclick="eliminarPunto('${record.id}', ${lat}, ${lng})">Eliminar</button>
           `;
           marker.bindPopup(popupHTML(), { autoClose: false, closeOnClick: false });
-
-          // Mostrar tooltip al pasar el ratón
           marker.bindTooltip(`<b>${nombre}</b><br>${direccion}`, { sticky: true });
 
-          // Solo abre popup al hacer clic
+          marker.on('mouseover', () => {
+            marker.openPopup();
+            guardarVista(lat, lng);
+          });
+
+          marker.on('mouseout', () => {
+            if (!marker.getPopup()._isOpen) {
+              marker.closePopup();
+            }
+          });
+
           marker.on('click', async () => {
             map.setView([lat, lng], 16);
             marker.openPopup();
@@ -134,7 +142,11 @@
       location.reload();
     };
 
+    // ✅ MODIFICACIÓN PRINCIPAL AQUÍ
     map.on('click', async e => {
+      const crear = confirm("¿Crear una nueva localización aquí?");
+      if (!crear) return;
+
       const nombre = prompt("Nombre del punto:");
       const direccion = prompt("Dirección del punto:");
       if (!nombre || !direccion) return;
@@ -172,4 +184,3 @@
   </script>
 </body>
 </html>
-
