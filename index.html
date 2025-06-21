@@ -149,6 +149,7 @@
           fillOpacity: newPoint.CheckIn ? 0.7 : 0.3,
           color: newPoint.CheckIn ? 'green' : 'gray'
         });
+        icon.bindPopup(`<b>${newPoint.Nombre}</b><br>${newPoint.Direccion}<br><b>Check-in: ${newPoint.CheckIn ? 'Sí' : 'No'}</b>`);
       }
     });
 
@@ -156,4 +157,5 @@
   </script>
 </body>
 </html>
+
 
