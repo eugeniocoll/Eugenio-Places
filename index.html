@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Viaje con Manuel</title>
+  <title>Viaje con Manuel - Caza San Martín</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <style>
     body {
@@ -21,14 +21,14 @@
   </style>
 </head>
 <body>
-  <h1>Viaje con Manuel</h1>
+  <h1>Viaje con Manuel - Caza San Martín</h1>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const airtableToken = "patiRwUAYSPhDFA6v.4860e76fce11ae963cf71189508da6ff87c3c2a8b82782b802eb20e1f04a2296";
-    const baseId = "appo1MtSst3hKF0ky";
-    const tableName = "Puntos"; // Nombre de la tabla
+    const airtableToken = "patiRwUAYSPhDFA6v";  // Token de Airtable
+    const baseId = "appo1MtSst3hKF0ky";  // Base ID de Airtable
+    const tableName = "Caza";  // Nombre de la tabla en Airtable
 
     const map = L.map('map').setView([39.5696, 2.6502], 13); // Centro Palma
 
@@ -36,6 +36,7 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
+    // Cargar los puntos de la base de datos Airtable
     async function cargarPuntos() {
       const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
       const headers = {
@@ -80,6 +81,7 @@
               actualizarPopup();
               icon.openPopup();
 
+              // Actualizar el estado en Airtable
               await fetch(`${url}/${record.id}`, {
                 method: 'PATCH',
                 headers: {
@@ -100,8 +102,47 @@
       }
     }
 
-    cargarPuntos();
+    // Agregar un nuevo punto al hacer clic en el mapa
+    map.on('click', async function(e) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+      const nombre = prompt("Ingresa el nombre del punto:");
+      const direccion = prompt("Ingresa la dirección del punto:");
+
+      if (nombre && direccion) {
+        const icon = L.circleMarker([lat, lng], {
+          radius: 12,
+          color: 'gray',
+          fillColor: '#888',
+          fillOpacity: 0.3,
+          weight: 3,
+          opacity: 1
+        }).addTo(map);
+
+        icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: No</b>`);
+
+        // Agregar el punto a Airtable
+        const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+        await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${airtableToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fields: {
+              Nombre: nombre,
+              Direccion: direccion,
+              Latitud: lat,
+              Longitud: lng,
+              CheckIn: false
+            }
+          })
+        });
+      }
+    });
+
+    cargarPuntos(); // Cargar los puntos al inicio
   </script>
 </body>
 </html>
-
