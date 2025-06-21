@@ -65,7 +65,7 @@
             });
 
             const actualizarPopup = () => {
-              icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: ${check ? 'Sí' : 'No'}</b>`);
+              icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: ${check ? 'Sí' : 'No'}</b><br><button onclick="eliminarPunto('${record.id}', this)">Eliminar</button>`);
             };
 
             actualizarPopup();
@@ -103,6 +103,40 @@
       }
     }
 
+    // Función para eliminar un punto
+    async function eliminarPunto(id, button) {
+      // Confirmación antes de eliminar
+      if (confirm("¿Seguro que quieres eliminar este punto?")) {
+        // Eliminar el marcador del mapa
+        const icon = button.closest('.leaflet-marker-icon'); // Obtener el marcador
+        if (icon) {
+          icon.remove(); // Eliminar el marcador del mapa
+        }
+
+        // Eliminar el punto de Airtable
+        const url = `https://api.airtable.com/v0/${baseId}/${tableName}/${id}`;
+        const headers = {
+          Authorization: `Bearer ${airtableToken}`,
+          'Content-Type': 'application/json'
+        };
+
+        try {
+          const response = await fetch(url, {
+            method: 'DELETE',
+            headers: headers
+          });
+
+          if (response.ok) {
+            alert("Punto eliminado correctamente");
+          } else {
+            alert("Error al eliminar el punto");
+          }
+        } catch (error) {
+          console.error("Error al eliminar el punto:", error);
+        }
+      }
+    }
+
     // Función para agregar un nuevo punto al hacer clic en el mapa
     map.on('click', async function(e) {
       const lat = e.latlng.lat;
@@ -120,7 +154,7 @@
           opacity: 1
         }).addTo(map);
 
-        icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: No</b>`);
+        icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: No</b><br><button onclick="eliminarPunto('${nombre}', this)">Eliminar</button>`);
 
         // Agregar el nuevo punto a Airtable
         const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
@@ -149,7 +183,7 @@
           fillOpacity: newPoint.CheckIn ? 0.7 : 0.3,
           color: newPoint.CheckIn ? 'green' : 'gray'
         });
-        icon.bindPopup(`<b>${newPoint.Nombre}</b><br>${newPoint.Direccion}<br><b>Check-in: ${newPoint.CheckIn ? 'Sí' : 'No'}</b>`);
+        icon.bindPopup(`<b>${newPoint.Nombre}</b><br>${newPoint.Direccion}<br><b>Check-in: ${newPoint.CheckIn ? 'Sí' : 'No'}</b><br><button onclick="eliminarPunto('${data.id}', this)">Eliminar</button>`);
       }
     });
 
