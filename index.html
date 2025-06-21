@@ -1,245 +1,113 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Viaje con Manuel</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-    h1 {
-      text-align: center;
-      margin: 10px;
-    }
-    #map {
-      width: 100%;
-      height: 90vh;
-    }
-    .delete-btn {
-      color: white;
-      background-color: red;
-      border: none;
-      padding: 5px 10px;
-      cursor: pointer;
-      border-radius: 3px;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body>
-  <h1>Viaje con Manuel</h1>
-  <div id="map"></div>
+<script>
+  // Variables para almacenar el último punto con check-in
+  let ultimoCheckInLatLng = null;
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    const airtableToken = "patiRwUAYSPhDFA6v.4860e76fce11ae963cf71189508da6ff87c3c2a8b82782b802eb20e1f04a2296";
-    const baseId = "appo1MtSst3hKF0ky";
-    const tableName = "Puntos"; // Nombre de la tabla
+  async function cargarPuntos() {
+    const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+    const headers = {
+      Authorization: `Bearer ${airtableToken}`,
+    };
 
-    const map = L.map('map').setView([39.5696, 2.6502], 13); // Centro Palma
+    try {
+      const res = await fetch(url, { headers });
+      const data = await res.json();
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+      data.records.forEach(record => {
+        const nombre = record.fields.Nombre || 'Sin nombre';
+        const direccion = record.fields.Direccion || 'Sin dirección';
+        const lat = record.fields.Latitud;
+        const lng = record.fields.Longitud;
+        let check = record.fields.CheckIn || false;
+        const persona = record.fields.Persona || 'Sin persona';
 
-    // Función para cargar los puntos existentes de Airtable
-    async function cargarPuntos() {
-      const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
-      const headers = {
-        Authorization: `Bearer ${airtableToken}`,
-      };
-
-      try {
-        const res = await fetch(url, { headers });
-        const data = await res.json();
-
-        data.records.forEach(record => {
-          const nombre = record.fields.Nombre || 'Sin nombre';
-          const direccion = record.fields.Direccion || 'Sin dirección';
-          const lat = record.fields.Latitud;
-          const lng = record.fields.Longitud;
-          let check = record.fields.CheckIn || false;
-          const persona = record.fields.Persona || 'Sin persona';
-
-          if (lat && lng) {
-            const icon = L.circleMarker([lat, lng], {
-              radius: 12,
-              color: check ? 'green' : 'gray',
-              fillColor: check ? 'green' : '#888',
-              fillOpacity: check ? 0.7 : 0.3,
-              weight: 3,
-              opacity: 1
-            });
-
-            const actualizarPopup = () => {
-              icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: ${check ? 'Sí' : 'No'}</b><br><b>Persona: ${persona}</b><br><button class="delete-btn" onclick="eliminarPunto('${record.id}', this)">Eliminar</button>`);
-            };
-
-            actualizarPopup();
-            icon.addTo(map);
-
-            // Funcionalidad de Check-in y desmarcar check-in al hacer clic
-            icon.on('click', async () => {
-              if (!check) {
-                // Si el punto no tiene check-in, pedir el nombre de la persona
-                const persona = prompt("Ingresa tu nombre para el check-in:");
-                if (persona) {
-                  check = true;
-                  // Actualizar el marcador en el mapa
-                  icon.setStyle({
-                    fillColor: 'green',
-                    fillOpacity: 0.7,
-                    color: 'green'
-                  });
-                  actualizarPopup();
-                  icon.openPopup();
-
-                  // Actualizar el campo 'CheckIn' y 'Persona' en Airtable
-                  await fetch(`${url}/${record.id}`, {
-                    method: 'PATCH',
-                    headers: {
-                      'Authorization': `Bearer ${airtableToken}`,
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                      fields: {
-                        CheckIn: check,
-                        Persona: persona
-                      }
-                    })
-                  });
-                }
-              } else {
-                // Si el check-in ya está hecho, eliminar el check-in
-                const confirmEliminar = confirm("¿Seguro que quieres eliminar el check-in?");
-                if (confirmEliminar) {
-                  check = false;
-                  // Actualizar el marcador en el mapa
-                  icon.setStyle({
-                    fillColor: '#888',
-                    fillOpacity: 0.3,
-                    color: 'gray'
-                  });
-                  actualizarPopup();
-                  icon.openPopup();
-
-                  // Eliminar el campo 'Persona' y 'CheckIn' en Airtable
-                  await fetch(`${url}/${record.id}`, {
-                    method: 'PATCH',
-                    headers: {
-                      'Authorization': `Bearer ${airtableToken}`,
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                      fields: {
-                        CheckIn: check,
-                        Persona: ''  // Limpiar el campo Persona
-                      }
-                    })
-                  });
-                }
-              }
-            });
+        if (lat && lng) {
+          if (check) {
+            ultimoCheckInLatLng = [lat, lng]; // Guardamos el último punto con check-in
           }
-        });
-      } catch (error) {
-        console.error("Error al cargar desde Airtable:", error);
-      }
-    }
 
-    // Función para eliminar un punto de Airtable
-    async function eliminarPunto(id, button) {
-      // Confirmación antes de eliminar
-      if (confirm("¿Seguro que quieres eliminar este punto?")) {
-        // Eliminar el marcador del mapa
-        const icon = button.closest('.leaflet-marker-icon'); // Obtener el marcador
-        if (icon) {
-          icon.remove(); // Eliminar el marcador del mapa
-        }
-
-        // Eliminar el punto de Airtable
-        const url = `https://api.airtable.com/v0/${baseId}/${tableName}/${id}`;
-        const headers = {
-          Authorization: `Bearer ${airtableToken}`,
-          'Content-Type': 'application/json'
-        };
-
-        try {
-          const response = await fetch(url, {
-            method: 'DELETE',
-            headers: headers
+          const icon = L.circleMarker([lat, lng], {
+            radius: 12,
+            color: check ? 'green' : 'gray',
+            fillColor: check ? 'green' : '#888',
+            fillOpacity: check ? 0.7 : 0.3,
+            weight: 3,
+            opacity: 1
           });
 
-          if (response.ok) {
-            alert("Punto eliminado correctamente");
-            location.reload(); // Recargar la página para actualizar el mapa
-          } else {
-            alert("Error al eliminar el punto");
-          }
-        } catch (error) {
-          console.error("Error al eliminar el punto:", error);
-        }
-      }
-    }
+          const popupContent = `
+            <b>${nombre}</b><br>
+            ${direccion}<br>
+            <b>Check-in:</b> ${check ? 'Sí' : 'No'}<br>
+            <b>Persona:</b> ${persona}<br>
+            <button class="delete-btn" onclick="eliminarPunto('${record.id}', this)">Eliminar</button>
+          `;
 
-    // Función para agregar un nuevo punto al hacer clic en el mapa
-    map.on('click', async function(e) {
-      const lat = e.latlng.lat;
-      const lng = e.latlng.lng;
-      const nombre = prompt("Ingresa el nombre del punto:");
-      const direccion = prompt("Ingresa la dirección del punto:");
+          icon.bindPopup(popupContent);
+          icon.addTo(map);
 
-      if (nombre && direccion) {
-        const icon = L.circleMarker([lat, lng], {
-          radius: 12,
-          color: 'gray',
-          fillColor: '#888',
-          fillOpacity: 0.3,
-          weight: 3,
-          opacity: 1
-        }).addTo(map);
+          // Mostrar info al pasar por encima
+          icon.on('mouseover', () => {
+            icon.openPopup();
+          });
+          icon.on('mouseout', () => {
+            icon.closePopup();
+          });
 
-        icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: No</b><br><button class="delete-btn" onclick="eliminarPunto('${nombre}', this)">Eliminar</button>`);
+          // Clic para alternar CheckIn (igual que antes)
+          icon.on('click', async () => {
+            if (!check) {
+              const personaInput = prompt("Ingresa tu nombre para el check-in:");
+              if (personaInput) {
+                check = true;
+                icon.setStyle({ fillColor: 'green', fillOpacity: 0.7, color: 'green' });
+                icon.setPopupContent(popupContent);
+                icon.openPopup();
 
-        // Agregar el nuevo punto a Airtable
-        const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${airtableToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            fields: {
-              Nombre: nombre,
-              Direccion: direccion,
-              Latitud: lat,
-              Longitud: lng,
-              CheckIn: false,  // Estado de Check-in por defecto
-              Persona: ''  // Inicialmente vacío
+                await fetch(`${url}/${record.id}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${airtableToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    fields: { CheckIn: check, Persona: personaInput }
+                  })
+                });
+
+                location.reload();
+              }
+            } else {
+              if (confirm("¿Seguro que quieres eliminar el check-in?")) {
+                check = false;
+                icon.setStyle({ fillColor: '#888', fillOpacity: 0.3, color: 'gray' });
+                icon.setPopupContent(popupContent);
+                icon.openPopup();
+
+                await fetch(`${url}/${record.id}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${airtableToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    fields: { CheckIn: false, Persona: '' }
+                  })
+                });
+
+                location.reload();
+              }
             }
-          })
-        });
+          });
+        }
+      });
 
-        // Esperamos a que el nuevo punto sea añadido y actualizamos la interfaz
-        const data = await response.json();
-        const newPoint = data.fields;
-        icon.setStyle({
-          fillColor: newPoint.CheckIn ? 'green' : '#888',
-          fillOpacity: newPoint.CheckIn ? 0.7 : 0.3,
-          color: newPoint.CheckIn ? 'green' : 'gray'
-        });
-        icon.bindPopup(`<b>${newPoint.Nombre}</b><br>${newPoint.Direccion}<br><b>Check-in: ${newPoint.CheckIn ? 'Sí' : 'No'}</b><br><b>Persona: ${newPoint.Persona || 'No registrada'}</b><br><button class="delete-btn" onclick="eliminarPunto('${data.id}', this)">Eliminar</button>`);
-        
-        // Recargar la página para reflejar el nuevo punto
-        location.reload();
+      // Al terminar de cargar puntos, enfocar al último con check-in si existe
+      if (ultimoCheckInLatLng) {
+        map.setView(ultimoCheckInLatLng, 16); // Zoom directo
       }
-    });
 
-    cargarPuntos(); // Cargar los puntos al inicio
-  </script>
-</body>
-</html>
+    } catch (error) {
+      console.error("Error al cargar desde Airtable:", error);
+    }
+  }
+</script>
