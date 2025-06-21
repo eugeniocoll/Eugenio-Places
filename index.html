@@ -1,113 +1,125 @@
-<script>
-  // Variables para almacenar el último punto con check-in
-  let ultimoCheckInLatLng = null;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Viaje con Manuel</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    h1 { text-align: center; margin: 10px; }
+    #map { width: 100%; height: 90vh; }
+    .delete-btn {
+      color: white;
+      background-color: red;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Viaje con Manuel</h1>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const airtableToken = "patiRwUAYSPhDFA6v.4860e76fce11ae963cf71189508da6ff87c3c2a8b82782b802eb20e1f04a2296";
+    const baseId = "appo1MtSst3hKF0ky";
+    const tableName = "Puntos";
 
-  async function cargarPuntos() {
-    const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
-    const headers = {
-      Authorization: `Bearer ${airtableToken}`,
-    };
+    const map = L.map('map').setView([39.5696, 2.6502], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    try {
-      const res = await fetch(url, { headers });
-      const data = await res.json();
+    async function cargarPuntos() {
+      const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+      const headers = { Authorization: `Bearer ${airtableToken}` };
+      let ultimoCheck = null;
 
-      data.records.forEach(record => {
-        const nombre = record.fields.Nombre || 'Sin nombre';
-        const direccion = record.fields.Direccion || 'Sin dirección';
-        const lat = record.fields.Latitud;
-        const lng = record.fields.Longitud;
-        let check = record.fields.CheckIn || false;
-        const persona = record.fields.Persona || 'Sin persona';
+      try {
+        const res = await fetch(url, { headers });
+        const data = await res.json();
 
-        if (lat && lng) {
-          if (check) {
-            ultimoCheckInLatLng = [lat, lng]; // Guardamos el último punto con check-in
-          }
+        data.records.forEach(record => {
+          const { Nombre: nombre = 'Sin nombre', Direccion: direccion = 'Sin dirección',
+                  Latitud: lat, Longitud: lng, CheckIn: check = false, Persona: persona = 'Sin persona' } = record.fields;
 
-          const icon = L.circleMarker([lat, lng], {
+          if (!(lat && lng)) return;
+
+          if (check) ultimoCheck = [lat, lng];
+
+          const marker = L.circleMarker([lat, lng], {
             radius: 12,
             color: check ? 'green' : 'gray',
             fillColor: check ? 'green' : '#888',
             fillOpacity: check ? 0.7 : 0.3,
-            weight: 3,
-            opacity: 1
-          });
+            weight: 3
+          }).addTo(map);
 
-          const popupContent = `
+          const popupHTML = () => `
             <b>${nombre}</b><br>
             ${direccion}<br>
             <b>Check-in:</b> ${check ? 'Sí' : 'No'}<br>
             <b>Persona:</b> ${persona}<br>
-            <button class="delete-btn" onclick="eliminarPunto('${record.id}', this)">Eliminar</button>
+            <button class="delete-btn" onclick="eliminarPunto('${record.id}')">Eliminar</button>
           `;
+          marker.bindPopup(popupHTML());
 
-          icon.bindPopup(popupContent);
-          icon.addTo(map);
+          marker.on('mouseover', () => marker.openPopup());
+          marker.on('mouseout', () => marker.closePopup());
 
-          // Mostrar info al pasar por encima
-          icon.on('mouseover', () => {
-            icon.openPopup();
-          });
-          icon.on('mouseout', () => {
-            icon.closePopup();
-          });
-
-          // Clic para alternar CheckIn (igual que antes)
-          icon.on('click', async () => {
+          marker.on('click', async () => {
             if (!check) {
-              const personaInput = prompt("Ingresa tu nombre para el check-in:");
-              if (personaInput) {
-                check = true;
-                icon.setStyle({ fillColor: 'green', fillOpacity: 0.7, color: 'green' });
-                icon.setPopupContent(popupContent);
-                icon.openPopup();
-
-                await fetch(`${url}/${record.id}`, {
-                  method: 'PATCH',
-                  headers: {
-                    'Authorization': `Bearer ${airtableToken}`,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    fields: { CheckIn: check, Persona: personaInput }
-                  })
-                });
-
-                location.reload();
-              }
+              const p = prompt("Ingresa tu nombre para el check-in:");
+              if (!p) return;
+              await fetch(`${url}/${record.id}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${airtableToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fields: { CheckIn: true, Persona: p } })
+              });
             } else {
-              if (confirm("¿Seguro que quieres eliminar el check-in?")) {
-                check = false;
-                icon.setStyle({ fillColor: '#888', fillOpacity: 0.3, color: 'gray' });
-                icon.setPopupContent(popupContent);
-                icon.openPopup();
-
-                await fetch(`${url}/${record.id}`, {
-                  method: 'PATCH',
-                  headers: {
-                    'Authorization': `Bearer ${airtableToken}`,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    fields: { CheckIn: false, Persona: '' }
-                  })
-                });
-
-                location.reload();
-              }
+              if (!confirm("¿Eliminar check‑in?")) return;
+              await fetch(`${url}/${record.id}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${airtableToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fields: { CheckIn: false, Persona: '' } })
+              });
             }
+            location.reload();
           });
-        }
-      });
+        });
 
-      // Al terminar de cargar puntos, enfocar al último con check-in si existe
-      if (ultimoCheckInLatLng) {
-        map.setView(ultimoCheckInLatLng, 16); // Zoom directo
+        if (ultimoCheck) map.setView(ultimoCheck, 16);
+      } catch (e) {
+        console.error("Error cargando puntos:", e);
       }
-
-    } catch (error) {
-      console.error("Error al cargar desde Airtable:", error);
     }
-  }
-</script>
+
+    window.eliminarPunto = async function(id) {
+      if (!confirm("¿Eliminar este punto?")) return;
+      const url = `https://api.airtable.com/v0/${baseId}/${tableName}/${id}`;
+      await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${airtableToken}` } });
+      location.reload();
+    };
+
+    map.on('click', async e => {
+      const nombre = prompt("Nombre del punto:");
+      const direccion = prompt("Dirección del punto:");
+      if (!nombre || !direccion) return;
+
+      const lat = e.latlng.lat, lng = e.latlng.lng;
+      await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${airtableToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { Nombre: nombre, Direccion: direccion, Latitud: lat, Longitud: lng, CheckIn: false, Persona: '' } })
+      });
+      location.reload();
+    });
+
+    cargarPuntos();
+  </script>
+</body>
+</html>
