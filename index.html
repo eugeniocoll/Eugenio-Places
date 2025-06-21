@@ -73,28 +73,36 @@
 
             // Funcionalidad de Check-in al hacer clic
             icon.on('click', async () => {
-              check = !check;
-              icon.setStyle({
-                fillColor: check ? 'green' : '#888',
-                fillOpacity: check ? 0.7 : 0.3,
-                color: check ? 'green' : 'gray'
-              });
-              actualizarPopup();
-              icon.openPopup();
+              // Si el punto no tiene check-in, pedir el nombre de la persona
+              if (!check) {
+                const persona = prompt("Ingresa tu nombre para el check-in:");
+                if (persona) {
+                  check = true;
+                  // Actualizar el marcador en el mapa
+                  icon.setStyle({
+                    fillColor: 'green',
+                    fillOpacity: 0.7,
+                    color: 'green'
+                  });
+                  actualizarPopup();
+                  icon.openPopup();
 
-              // Actualizar el estado de Check-in en Airtable
-              await fetch(`${url}/${record.id}`, {
-                method: 'PATCH',
-                headers: {
-                  'Authorization': `Bearer ${airtableToken}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  fields: {
-                    CheckIn: check
-                  }
-                })
-              });
+                  // Actualizar el campo 'CheckIn' y 'Persona' en Airtable
+                  await fetch(`${url}/${record.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Authorization': `Bearer ${airtableToken}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      fields: {
+                        CheckIn: check,
+                        Persona: persona
+                      }
+                    })
+                  });
+                }
+              }
             });
           }
         });
@@ -170,7 +178,8 @@
               Direccion: direccion,
               Latitud: lat,
               Longitud: lng,
-              CheckIn: false  // Estado de Check-in por defecto
+              CheckIn: false,  // Estado de Check-in por defecto
+              Persona: ''  // Inicialmente vacío
             }
           })
         });
