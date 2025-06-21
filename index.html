@@ -18,6 +18,15 @@
       width: 100%;
       height: 90vh;
     }
+    .delete-btn {
+      color: white;
+      background-color: red;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -66,7 +75,7 @@
             });
 
             const actualizarPopup = () => {
-              icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: ${check ? 'Sí' : 'No'}</b><br><b>Persona: ${persona}</b><br><button onclick="eliminarPunto('${record.id}', this)">Eliminar</button>`);
+              icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: ${check ? 'Sí' : 'No'}</b><br><b>Persona: ${persona}</b><br><button class="delete-btn" onclick="eliminarPunto('${record.id}', this)">Eliminar</button>`);
             };
 
             actualizarPopup();
@@ -166,6 +175,7 @@
 
           if (response.ok) {
             alert("Punto eliminado correctamente");
+            location.reload(); // Recargar la página para actualizar el mapa
           } else {
             alert("Error al eliminar el punto");
           }
@@ -192,7 +202,7 @@
           opacity: 1
         }).addTo(map);
 
-        icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: No</b><br><button onclick="eliminarPunto('${nombre}', this)">Eliminar</button>`);
+        icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: No</b><br><button class="delete-btn" onclick="eliminarPunto('${nombre}', this)">Eliminar</button>`);
 
         // Agregar el nuevo punto a Airtable
         const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
@@ -222,7 +232,10 @@
           fillOpacity: newPoint.CheckIn ? 0.7 : 0.3,
           color: newPoint.CheckIn ? 'green' : 'gray'
         });
-        icon.bindPopup(`<b>${newPoint.Nombre}</b><br>${newPoint.Direccion}<br><b>Check-in: ${newPoint.CheckIn ? 'Sí' : 'No'}</b><br><b>Persona: ${newPoint.Persona || 'No registrada'}</b><br><button onclick="eliminarPunto('${data.id}', this)">Eliminar</button>`);
+        icon.bindPopup(`<b>${newPoint.Nombre}</b><br>${newPoint.Direccion}<br><b>Check-in: ${newPoint.CheckIn ? 'Sí' : 'No'}</b><br><b>Persona: ${newPoint.Persona || 'No registrada'}</b><br><button class="delete-btn" onclick="eliminarPunto('${data.id}', this)">Eliminar</button>`);
+        
+        // Recargar la página para reflejar el nuevo punto
+        location.reload();
       }
     });
 
