@@ -53,6 +53,7 @@
           const lat = record.fields.Latitud;
           const lng = record.fields.Longitud;
           let check = record.fields.CheckIn || false;
+          const persona = record.fields.Persona || 'Sin persona';
 
           if (lat && lng) {
             const icon = L.circleMarker([lat, lng], {
@@ -65,16 +66,16 @@
             });
 
             const actualizarPopup = () => {
-              icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: ${check ? 'Sí' : 'No'}</b><br><button onclick="eliminarPunto('${record.id}', this)">Eliminar</button>`);
+              icon.bindPopup(`<b>${nombre}</b><br>${direccion}<br><b>Check-in: ${check ? 'Sí' : 'No'}</b><br><b>Persona: ${persona}</b><br><button onclick="eliminarPunto('${record.id}', this)">Eliminar</button>`);
             };
 
             actualizarPopup();
             icon.addTo(map);
 
-            // Funcionalidad de Check-in al hacer clic
+            // Funcionalidad de Check-in y desmarcar check-in al hacer clic
             icon.on('click', async () => {
-              // Si el punto no tiene check-in, pedir el nombre de la persona
               if (!check) {
+                // Si el punto no tiene check-in, pedir el nombre de la persona
                 const persona = prompt("Ingresa tu nombre para el check-in:");
                 if (persona) {
                   check = true;
@@ -102,6 +103,35 @@
                     })
                   });
                 }
+              } else {
+                // Si el check-in ya está hecho, eliminar el check-in
+                const confirmEliminar = confirm("¿Seguro que quieres eliminar el check-in?");
+                if (confirmEliminar) {
+                  check = false;
+                  // Actualizar el marcador en el mapa
+                  icon.setStyle({
+                    fillColor: '#888',
+                    fillOpacity: 0.3,
+                    color: 'gray'
+                  });
+                  actualizarPopup();
+                  icon.openPopup();
+
+                  // Eliminar el campo 'Persona' y 'CheckIn' en Airtable
+                  await fetch(`${url}/${record.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Authorization': `Bearer ${airtableToken}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      fields: {
+                        CheckIn: check,
+                        Persona: ''  // Limpiar el campo Persona
+                      }
+                    })
+                  });
+                }
               }
             });
           }
@@ -111,7 +141,7 @@
       }
     }
 
-    // Función para eliminar un punto
+    // Función para eliminar un punto de Airtable
     async function eliminarPunto(id, button) {
       // Confirmación antes de eliminar
       if (confirm("¿Seguro que quieres eliminar este punto?")) {
@@ -192,7 +222,7 @@
           fillOpacity: newPoint.CheckIn ? 0.7 : 0.3,
           color: newPoint.CheckIn ? 'green' : 'gray'
         });
-        icon.bindPopup(`<b>${newPoint.Nombre}</b><br>${newPoint.Direccion}<br><b>Check-in: ${newPoint.CheckIn ? 'Sí' : 'No'}</b><br><button onclick="eliminarPunto('${data.id}', this)">Eliminar</button>`);
+        icon.bindPopup(`<b>${newPoint.Nombre}</b><br>${newPoint.Direccion}<br><b>Check-in: ${newPoint.CheckIn ? 'Sí' : 'No'}</b><br><b>Persona: ${newPoint.Persona || 'No registrada'}</b><br><button onclick="eliminarPunto('${data.id}', this)">Eliminar</button>`);
       }
     });
 
