@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Viaje Mayorca </title>
+  <title>Viaje Mayorca</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; }
+    body { margin: 0; font-family: Arial, sans-serif; display: none; }
     h1 { text-align: center; margin: 10px; position: relative; z-index: 1100; }
     #map { width: 100%; height: 90vh; }
 
@@ -44,14 +44,12 @@
       background-color: #218838;
     }
 
-    /* Popup delete button */
     .delete-btn {
       background-color: red; color: white; border: none;
       padding: 6px 10px; margin-top: 6px;
       cursor: pointer; border-radius: 4px;
     }
 
-    /* Barra para introducir coordenadas, inicialmente oculta */
     #coords-input-bar {
       position: absolute;
       bottom: 60px;
@@ -91,18 +89,55 @@
   </style>
 </head>
 <body>
-  <h1>Viaje Mayorca</h1>
-
-  <button onclick="centrarEnPosicionActual()" class="gps-button">📍 Mi ubicación</button>
-  <button class="add-coords-btn" onclick="toggleCoordsInput()">➕ Añadir coordenadas</button>
-
-  <div id="coords-input-bar">
-    <input id="lat-input" type="number" step="any" placeholder="Latitud" />
-    <input id="lng-input" type="number" step="any" placeholder="Longitud" />
-    <button onclick="añadirCoordenadas()">Añadir</button>
+  <!-- Formulario de login -->
+  <div id="login-container" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;">
+    <h2>Iniciar sesión</h2>
+    <input id="username" placeholder="Usuario" style="margin:5px;padding:8px;" />
+    <input id="password" type="password" placeholder="Contraseña" style="margin:5px;padding:8px;" />
+    <button onclick="login()" style="padding:8px 12px;margin-top:10px;">Entrar</button>
+    <p id="error" style="color:red;"></p>
   </div>
 
-  <div id="map"></div>
+  <!-- Contenido protegido -->
+  <div id="app-content" style="display:none;">
+    <h1>Viaje Mayorca</h1>
+    <button onclick="centrarEnPosicionActual()" class="gps-button">📍 Mi ubicación</button>
+    <button class="add-coords-btn" onclick="toggleCoordsInput()">➕ Añadir coordenadas</button>
+
+    <div id="coords-input-bar">
+      <input id="lat-input" type="number" step="any" placeholder="Latitud" />
+      <input id="lng-input" type="number" step="any" placeholder="Longitud" />
+      <button onclick="añadirCoordenadas()">Añadir</button>
+    </div>
+
+    <div id="map"></div>
+  </div>
+
+  <script>
+    const USER = "admin";
+    const PASS = "Eugenio.1";
+
+    function login() {
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+      if (u === USER && p === PASS) {
+        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('app-content').style.display = 'block';
+        document.body.style.display = 'block';
+        iniciarApp();
+      } else {
+        document.getElementById('error').textContent = 'Usuario o contraseña incorrectos.';
+      }
+    }
+
+    function iniciarApp() {
+      navigator.geolocation.getCurrentPosition(
+        pos => iniciarMapa(pos.coords.latitude, pos.coords.longitude),
+        () => iniciarMapa(40.4168, -3.7038), // fallback a Madrid
+        { enableHighAccuracy: true }
+      );
+    }
+  </script>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
@@ -124,7 +159,6 @@
         radius: 8, color: 'blue', fillColor: 'blue', fillOpacity: 0.6
       }).addTo(map).bindTooltip("Estás aquí").openTooltip();
 
-      // Añadir buscador
       L.Control.geocoder({
         defaultMarkGeocode: false
       }).on('markgeocode', function(e) {
@@ -247,21 +281,14 @@
       );
     }
 
-    // Mostrar/ocultar la barra para introducir coordenadas
     function toggleCoordsInput() {
       const bar = document.getElementById('coords-input-bar');
-      if (bar.style.display === 'none' || bar.style.display === '') {
-        bar.style.display = 'block';
-      } else {
-        bar.style.display = 'none';
-      }
+      bar.style.display = (bar.style.display === 'none' || bar.style.display === '') ? 'block' : 'none';
     }
 
-    // Añadir coordenadas al mapa y guardar en Airtable
     async function añadirCoordenadas() {
       const lat = parseFloat(document.getElementById('lat-input').value);
       const lng = parseFloat(document.getElementById('lng-input').value);
-
       if (isNaN(lat) || isNaN(lng)) {
         alert('Por favor, introduce valores numéricos válidos para latitud y longitud.');
         return;
@@ -274,12 +301,6 @@
       await guardarPunto(lat, lng, nombre, direccion);
       location.reload();
     }
-
-    navigator.geolocation.getCurrentPosition(
-      pos => iniciarMapa(pos.coords.latitude, pos.coords.longitude),
-      () => iniciarMapa(40.4168, -3.7038), // fallback a Madrid
-      { enableHighAccuracy: true }
-    );
   </script>
 </body>
 </html>
