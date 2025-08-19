@@ -1,9 +1,9 @@
 name: Airtable API Proxy
 
-on:
+ on:
   workflow_dispatch:
   schedule:
-    - cron: "*/10 * * * *"  # Cada 10 minutos
+# - cron: "*/10 * * * *"  # Cada 10 minutos
 
 permissions:
   contents: write  # Asegúrate de que `GITHUB_TOKEN` tenga permiso de escritura
