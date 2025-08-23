@@ -39,10 +39,7 @@
       font-weight: bold;
       transition: background-color 0.3s ease;
     }
-
-    .add-coords-btn:hover {
-      background-color: #218838;
-    }
+    .add-coords-btn:hover { background-color: #218838; }
 
     .delete-btn {
       background-color: red; color: white; border: none;
@@ -82,19 +79,16 @@
       font-weight: bold;
       transition: background-color 0.3s ease;
     }
-
-    #coords-input-bar button:hover {
-      background-color: #0056b3;
-    }
+    #coords-input-bar button:hover { background-color: #0056b3; }
   </style>
 </head>
 <body>
 
 <script>
+  // Autenticación simple
   if (!sessionStorage.getItem("autenticado")) {
     const usuario = prompt("Usuario:");
     const contraseña = prompt("Contraseña:");
-
     if (usuario === "admin" && contraseña === "Eugenio.1") {
       sessionStorage.setItem("autenticado", "true");
     } else {
@@ -106,7 +100,6 @@
 </script>
 
 <h1>Eugenio's Places</h1>
-
 <button onclick="centrarEnPosicionActual()" class="gps-button">📍 Mi ubicación</button>
 <button class="add-coords-btn" onclick="toggleCoordsInput()">➕ Añadir coordenadas</button>
 
@@ -122,6 +115,7 @@
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
 <script>
+  // Token original de tu código
   const airtableToken = "patiRwUAYSPhDFA6v.4860e76fce11ae963cf71189508da6ff87c3c2a8b82782b802eb20e1f04a2296";
   const baseId = "appo1MtSst3hKF0ky";
   const tableName = "Puntos";
@@ -239,9 +233,7 @@
     if (!confirm("¿Estás seguro de eliminar este punto?")) return;
     fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${id}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${airtableToken}`
-      }
+      headers: { Authorization: `Bearer ${airtableToken}` }
     }).then(() => location.reload());
   }
 
@@ -268,26 +260,24 @@
   async function añadirCoordenadas() {
     const lat = parseFloat(document.getElementById('lat-input').value);
     const lng = parseFloat(document.getElementById('lng-input').value);
-
     if (isNaN(lat) || isNaN(lng)) {
-      alert('Por favor, introduce valores numéricos válidos para latitud y longitud.');
+      alert('Por favor, introduce valores válidos.');
       return;
     }
     const nombre = prompt("Nombre del punto:");
     if (!nombre) return;
     const direccion = prompt("Dirección:");
     if (!direccion) return;
-
     await guardarPunto(lat, lng, nombre, direccion);
     location.reload();
   }
 
+  // Inicializar mapa
   navigator.geolocation.getCurrentPosition(
     pos => iniciarMapa(pos.coords.latitude, pos.coords.longitude),
-    () => iniciarMapa(40.4168, -3.7038),
+    () => iniciarMapa(40.4168, -3.7038), // fallback Madrid
     { enableHighAccuracy: true }
   );
 </script>
-
 </body>
 </html>
